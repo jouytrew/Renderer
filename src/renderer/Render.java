@@ -62,7 +62,7 @@ public class Render extends Environment {
                     break;
                 case KeyEvent.VK_E:
                     theta--;
-                    if (theta > 0) {
+                    if (theta < 0) {
                         theta += DEGREES_IN_CIRCLE;
                     }
                     break;
@@ -126,18 +126,20 @@ public class Render extends Environment {
                 RenderingHints.KEY_TEXT_ANTIALIASING,
                 RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 //</editor-fold>
-        double slope = Math.tan(degreeToRadian(theta)); /// slope * startpoint_x + n = startpoint_y
+        double slope = Math.tan(degreeToRadian(theta));
         Point origin = new Point(screenCenter.x - (interval * reference.x), screenCenter.y - (interval * reference.y));
 
         // draw the x axis
         int a = origin.y + (int) (slope * origin.x);
         int b = origin.y + (int) (slope * (origin.x - screenSize.width));
-        g.drawLine(0, a, screenSize.width, b);
+        if(theta == 90 || theta == 270) g.drawLine(screenCenter.x, 0,  screenCenter.x, screenSize.height);
+        else g.drawLine(0, a, screenSize.width, b);
 
         // draw the y axis
         a = origin.x - (int) (slope * origin.y);
         b = origin.x - (int) (slope * (origin.y - screenSize.height));
-        g.drawLine(a, 0, b, screenSize.height);
+        if (theta == 90 || theta == 270) g.drawLine(0, screenCenter.y, screenSize.width, screenCenter.y);
+        else g.drawLine(a, 0, b, screenSize.height);
     }
     //</editor-fold>
 
