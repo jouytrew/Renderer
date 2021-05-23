@@ -129,6 +129,9 @@ public class Render extends Environment {
         double slope = Math.tan(degreeToRadian(theta));
         Point origin = new Point(screenCenter.x - (interval * reference.x), screenCenter.y - (interval * reference.y));
 
+        g.setFont(new Font("Courier New", Font.PLAIN, 12));
+        g.drawString("Angle: " + theta, 5, 12);
+
         // draw the x axis
         int a = origin.y + (int) (slope * origin.x);
         int b = origin.y + (int) (slope * (origin.x - screenSize.width));
@@ -138,7 +141,7 @@ public class Render extends Environment {
         // draw the y axis
         a = origin.x - (int) (slope * origin.y);
         b = origin.x - (int) (slope * (origin.y - screenSize.height));
-        if (theta == 90 || theta == 270) g.drawLine(0, screenCenter.y, screenSize.width, screenCenter.y);
+        if(theta == 90 || theta == 270) g.drawLine(0, screenCenter.y, screenSize.width, screenCenter.y);
         else g.drawLine(a, 0, b, screenSize.height);
     }
     //</editor-fold>
