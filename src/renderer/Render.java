@@ -13,7 +13,7 @@ public class Render extends Environment implements PolygonEnvironmentIntf{
 
     //<editor-fold desc="Fields">
     Point reference = new Point(0, 0);
-    double theta = 0;
+    double theta = 90;
 
     final int interval = 50; // TODO: add zoom later
     final int DEGREES_IN_CIRCLE = 360;
@@ -53,11 +53,11 @@ public class Render extends Environment implements PolygonEnvironmentIntf{
             switch(e.getKeyCode()) {
                 case KeyEvent.VK_UP:
                 case KeyEvent.VK_W:
-                    reference.y--;
+                    reference.y++;
                     break;
                 case KeyEvent.VK_DOWN:
                 case KeyEvent.VK_S:
-                    reference.y++;
+                    reference.y--;
                     break;
                 case KeyEvent.VK_LEFT:
                 case KeyEvent.VK_A:
@@ -174,8 +174,38 @@ public class Render extends Environment implements PolygonEnvironmentIntf{
     //<editor-fold desc="Polygon Environment Interface">
     @Override
     public Point getEnvCoordinates(Point point) {
-        return new Point(screenCenter.x - (interval * (reference.x - point.x)),
+        Point drawCoordinates = new Point(screenCenter.x - (interval * (reference.x - point.x)),
                 screenCenter.y + (interval * (reference.y - point.y)));
+        if (theta == 0) {
+            drawCoordinates = new Point(screenCenter.x - (interval * (reference.x - point.x)),
+                    screenCenter.y + (interval * (reference.y - point.y)));
+        } else if (theta == 90) {
+            Point temp = drawCoordinates;
+            drawCoordinates = new Point(-1 * temp.y, temp.x);
+        } else if (theta == 270) {
+
+        } else {
+            // important
+        }
+
+        return drawCoordinates;
     }
     //</editor-fold>
+
+//    private Polygon rotate(Polygon polygon){
+//        List<Point> vertices = new ArrayList<>();
+//        for(Point point : polygon.vertices) {
+//            double phi = 0;
+//            if(point.x != 0) phi = degreeToRadian(Math.atan(point.y / point.x));
+//            double hypotenuse = Math.sqrt(point.x^2+point.y^2);
+//            Point temp = new Point ((int) (hypotenuse * Math.cos(degreeToRadian(theta + phi))),
+//                    (int) (hypotenuse * Math.sin(degreeToRadian(theta) + phi)));
+//            vertices.add(temp);
+//        }
+//        return new Polygon(vertices, this);
+//    }
+//
+//    private Point rotate(Point point, double theta) {
+//        return null;
+//    }
 }
