@@ -6,7 +6,10 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 
-public class Render extends Environment {
+import java.util.ArrayList;
+import java.util.List;
+
+public class Render extends Environment implements PolygonEnvironmentIntf{
 
     //<editor-fold desc="Fields">
     Point reference = new Point(0, 0);
@@ -17,6 +20,9 @@ public class Render extends Environment {
 
     Dimension screenSize;
     Point screenCenter;
+
+
+    List<Polygon> polygons;
     //</editor-fold>
 
     //<editor-fold desc="Init Env">
@@ -24,6 +30,14 @@ public class Render extends Environment {
     public void initializeEnvironment() {
         screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         screenCenter = new Point(screenSize.width / 2, screenSize.height / 2);
+
+        List<Point> temp = new ArrayList<>();
+        temp.add(new Point(1,1));
+        temp.add(new Point(2,1));
+        temp.add(new Point(1,2));
+
+        polygons = new ArrayList<>();
+        polygons.add(new Polygon(temp, this));
     }
     //</editor-fold>
 
@@ -126,8 +140,9 @@ public class Render extends Environment {
                 RenderingHints.KEY_TEXT_ANTIALIASING,
                 RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 //</editor-fold>
+
         double slope = Math.tan(degreeToRadian(theta));
-        Point origin = new Point(screenCenter.x - (interval * reference.x), screenCenter.y - (interval * reference.y));
+        Point origin = getEnvCoordinates(new Point(0, 0));
 
         g.setFont(new Font("Courier New", Font.PLAIN, 12));
         g.drawString("Angle: " + theta, 5, 12);
@@ -143,10 +158,24 @@ public class Render extends Environment {
         b = origin.x - (int) (slope * (origin.y - screenSize.height));
         if(theta == 90 || theta == 270) g.drawLine(0, screenCenter.y, screenSize.width, screenCenter.y);
         else g.drawLine(a, 0, b, screenSize.height);
+
+        if (polygons != null) {
+            for (Polygon polygon : polygons) {
+                polygon.draw(g);
+            }
+        }
     }
     //</editor-fold>
 
     private double degreeToRadian(double n) {
         return n * Math.PI / 180;
     }
+
+    //<editor-fold desc="Polygon Environment Interface">
+    @Override
+    public Point getEnvCoordinates(Point point) {
+        return new Point(screenCenter.x - (interval * (reference.x - point.x)),
+                screenCenter.y + (interval * (reference.y - point.y)));
+    }
+    //</editor-fold>
 }
