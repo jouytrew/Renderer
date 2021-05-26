@@ -6,21 +6,22 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 
+import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Render extends Environment implements PolygonEnvironmentIntf{
 
     //<editor-fold desc="Fields">
-    Point reference = new Point(0, 0);
-    double theta = 90;
+    Point2D.Double reference = new Point2D.Double(0.0, 0.0);
+    double theta = 0;
+    final double DELTA_CONSTANT = 0.05;
 
     final int interval = 50; // TODO: add zoom later
     final int DEGREES_IN_CIRCLE = 360;
 
     Dimension screenSize;
     Point screenCenter;
-
 
     List<Polygon> polygons;
     //</editor-fold>
@@ -53,19 +54,23 @@ public class Render extends Environment implements PolygonEnvironmentIntf{
             switch(e.getKeyCode()) {
                 case KeyEvent.VK_UP:
                 case KeyEvent.VK_W:
-                    reference.y++;
+                    reference.y += DELTA_CONSTANT * Math.cos(degreeToRadian(theta));
+                    reference.x += DELTA_CONSTANT * Math.sin(degreeToRadian(theta));
                     break;
                 case KeyEvent.VK_DOWN:
                 case KeyEvent.VK_S:
-                    reference.y--;
+                    reference.y -= DELTA_CONSTANT * Math.cos(degreeToRadian(theta));
+                    reference.x -= DELTA_CONSTANT * Math.sin(degreeToRadian(theta));
                     break;
                 case KeyEvent.VK_LEFT:
                 case KeyEvent.VK_A:
-                    reference.x--;
+                    reference.x -= DELTA_CONSTANT * Math.cos(degreeToRadian(theta));
+                    reference.y -= DELTA_CONSTANT * Math.sin(degreeToRadian(theta));
                     break;
                 case KeyEvent.VK_RIGHT:
                 case KeyEvent.VK_D:
-                    reference.x++;
+                    reference.x += DELTA_CONSTANT * Math.cos(degreeToRadian(theta));
+                    reference.y += DELTA_CONSTANT * Math.sin(degreeToRadian(theta));
                     break;
 
                 case KeyEvent.VK_Q:
@@ -145,19 +150,25 @@ public class Render extends Environment implements PolygonEnvironmentIntf{
         Point origin = getEnvCoordinates(new Point(0, 0));
 
         g.setFont(new Font("Courier New", Font.PLAIN, 12));
-        g.drawString("Angle: " + theta, 5, 12);
+        g.drawString("Theta: " + theta, 5, 12);
+        g.drawString("Reference: (" + reference.x + ", " + reference.y + ")", 5, 24);
 
-        // draw the x axis
-        int a = origin.y + (int) (slope * origin.x);
-        int b = origin.y + (int) (slope * (origin.x - screenSize.width));
-        if(theta == 90 || theta == 270) g.drawLine(screenCenter.x, 0,  screenCenter.x, screenSize.height);
-        else g.drawLine(0, a, screenSize.width, b);
 
-        // draw the y axis
-        a = origin.x - (int) (slope * origin.y);
-        b = origin.x - (int) (slope * (origin.y - screenSize.height));
-        if(theta == 90 || theta == 270) g.drawLine(0, screenCenter.y, screenSize.width, screenCenter.y);
-        else g.drawLine(a, 0, b, screenSize.height);
+        // draw the origin
+        int circleRadius = 5; // temp value
+        g.drawOval(origin.x - circleRadius, origin.y - circleRadius, 2 * circleRadius, 2 * circleRadius);
+//        // draw the x axis
+//        int a = origin.y + (int) (slope * origin.x);
+//        int b = origin.y + (int) (slope * (origin.x - screenSize.width));
+//
+//        if (theta == 90 || theta == 270) g.drawLine(screenCenter.x, 0,  screenCenter.x, screenSize.height);
+//        else g.drawLine(0, a, screenSize.width, b);
+//
+//        // draw the y axis
+//        a = origin.x - (int) (slope * origin.y);
+//        b = origin.x - (int) (slope * (origin.y - screenSize.height));
+//        if(theta == 90 || theta == 270) g.drawLine(0, screenCenter.y, screenSize.width, screenCenter.y);
+//        else g.drawLine(a, 0, b, screenSize.height);
 
         if (polygons != null) {
             for (Polygon polygon : polygons) {
@@ -174,38 +185,11 @@ public class Render extends Environment implements PolygonEnvironmentIntf{
     //<editor-fold desc="Polygon Environment Interface">
     @Override
     public Point getEnvCoordinates(Point point) {
-        Point drawCoordinates = new Point(screenCenter.x - (interval * (reference.x - point.x)),
-                screenCenter.y + (interval * (reference.y - point.y)));
-        if (theta == 0) {
-            drawCoordinates = new Point(screenCenter.x - (interval * (reference.x - point.x)),
-                    screenCenter.y + (interval * (reference.y - point.y)));
-        } else if (theta == 90) {
-            Point temp = drawCoordinates;
-            drawCoordinates = new Point(-1 * temp.y, temp.x);
-        } else if (theta == 270) {
-
-        } else {
-            // important
-        }
-
+        double h = Math.sqrt(Math.pow(reference.x - point.x, 2) + Math.pow(reference.y - point.y, 2)); // Pythagorus X^2 + Y^2 = H^2
+        double phi = (point.y - reference.y) == 0 ? 0 : Math.atan(((double) point.x - reference.x) / (point.y - reference.y));
+        Point drawCoordinates = new Point(screenCenter.x + (int) (interval * h * Math.sin(phi - degreeToRadian(theta))),
+                screenCenter.y - (int) (interval * h * Math.cos(phi - degreeToRadian(theta))));
         return drawCoordinates;
     }
     //</editor-fold>
-
-//    private Polygon rotate(Polygon polygon){
-//        List<Point> vertices = new ArrayList<>();
-//        for(Point point : polygon.vertices) {
-//            double phi = 0;
-//            if(point.x != 0) phi = degreeToRadian(Math.atan(point.y / point.x));
-//            double hypotenuse = Math.sqrt(point.x^2+point.y^2);
-//            Point temp = new Point ((int) (hypotenuse * Math.cos(degreeToRadian(theta + phi))),
-//                    (int) (hypotenuse * Math.sin(degreeToRadian(theta) + phi)));
-//            vertices.add(temp);
-//        }
-//        return new Polygon(vertices, this);
-//    }
-//
-//    private Point rotate(Point point, double theta) {
-//        return null;
-//    }
 }
