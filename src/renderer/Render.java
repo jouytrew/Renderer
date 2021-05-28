@@ -32,13 +32,31 @@ public class Render extends Environment implements PolygonEnvironmentIntf{
         screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         screenCenter = new Point(screenSize.width / 2, screenSize.height / 2);
 
-        List<Point> temp = new ArrayList<>();
-        temp.add(new Point(1,1));
-        temp.add(new Point(2,1));
-        temp.add(new Point(1,2));
-
         polygons = new ArrayList<>();
-        polygons.add(new Polygon(temp, this));
+
+        List<Point> Q1 = new ArrayList<>();
+        Q1.add(new Point(1,1));
+        Q1.add(new Point(2,1));
+        Q1.add(new Point(1,2));
+        polygons.add(new Polygon(Q1, this));
+
+        List<Point> Q2 = new ArrayList<>();
+        Q2.add(new Point(-1,1));
+        Q2.add(new Point(-2,1));
+        Q2.add(new Point(-1,2));
+        polygons.add(new Polygon(Q2, this));
+
+        List<Point> Q4 = new ArrayList<>();
+        Q4.add(new Point(1,-1));
+        Q4.add(new Point(2,-1));
+        Q4.add(new Point(1,-2));
+        polygons.add(new Polygon(Q4, this));
+
+        List<Point> Q3 = new ArrayList<>();
+        Q3.add(new Point(-1,-1));
+        Q3.add(new Point(-2,-1));
+        Q3.add(new Point(-1,-2));
+        polygons.add(new Polygon(Q3, this));
     }
     //</editor-fold>
 
@@ -54,17 +72,17 @@ public class Render extends Environment implements PolygonEnvironmentIntf{
             switch(e.getKeyCode()) {
                 case KeyEvent.VK_UP:
                 case KeyEvent.VK_W:
-                    reference.y += DELTA_CONSTANT * Math.cos(degreeToRadian(theta));
-                    reference.x += DELTA_CONSTANT * Math.sin(degreeToRadian(theta));
-                    break;
-                case KeyEvent.VK_DOWN:
-                case KeyEvent.VK_S:
                     reference.y -= DELTA_CONSTANT * Math.cos(degreeToRadian(theta));
                     reference.x -= DELTA_CONSTANT * Math.sin(degreeToRadian(theta));
                     break;
+                case KeyEvent.VK_DOWN:
+                case KeyEvent.VK_S:
+                    reference.y += DELTA_CONSTANT * Math.cos(degreeToRadian(theta));
+                    reference.x += DELTA_CONSTANT * Math.sin(degreeToRadian(theta));
+                    break;
                 case KeyEvent.VK_LEFT:
                 case KeyEvent.VK_A:
-                    reference.x -= DELTA_CONSTANT * Math.cos(degreeToRadian(theta));
+                    reference.x -= DELTA_CONSTANT * Math.cos(degreeToRadian(theta)) ;
                     reference.y -= DELTA_CONSTANT * Math.sin(degreeToRadian(theta));
                     break;
                 case KeyEvent.VK_RIGHT:
@@ -84,6 +102,12 @@ public class Render extends Environment implements PolygonEnvironmentIntf{
                     if (theta < 0) {
                         theta += DEGREES_IN_CIRCLE;
                     }
+                    break;
+
+                case KeyEvent.VK_R:
+                    reference.x = 0;
+                    reference.y = 0;
+                    theta = 0;
                     break;
             }
         }
@@ -157,18 +181,20 @@ public class Render extends Environment implements PolygonEnvironmentIntf{
         // draw the origin
         int circleRadius = 5; // temp value
         g.drawOval(origin.x - circleRadius, origin.y - circleRadius, 2 * circleRadius, 2 * circleRadius);
-//        // draw the x axis
-//        int a = origin.y + (int) (slope * origin.x);
-//        int b = origin.y + (int) (slope * (origin.x - screenSize.width));
-//
-//        if (theta == 90 || theta == 270) g.drawLine(screenCenter.x, 0,  screenCenter.x, screenSize.height);
-//        else g.drawLine(0, a, screenSize.width, b);
-//
-//        // draw the y axis
-//        a = origin.x - (int) (slope * origin.y);
-//        b = origin.x - (int) (slope * (origin.y - screenSize.height));
-//        if(theta == 90 || theta == 270) g.drawLine(0, screenCenter.y, screenSize.width, screenCenter.y);
-//        else g.drawLine(a, 0, b, screenSize.height);
+        // draw the x axis
+        int a = origin.y + (int) (slope * origin.x);
+        int b = origin.y + (int) (slope * (origin.x - screenSize.width));
+
+        // TODO: THIS LINE IS WRONG
+        if (theta == 90 || theta == 270) g.drawLine((int)(origin.x - reference.x) , 0,  (int)(origin.x - reference.x), screenSize.height);
+        else g.drawLine(0, a, screenSize.width, b);
+
+        // draw the y axis
+        a = origin.x - (int) (slope * origin.y);
+        b = origin.x - (int) (slope * (origin.y - screenSize.height));
+        // TODO: THIS LINE IS WRONG
+        if(theta == 90 || theta == 270) g.drawLine(0, (int)(origin.y - reference.y), screenSize.width, (int)(origin.y - reference.y));
+        else g.drawLine(a, 0, b, screenSize.height);
 
         if (polygons != null) {
             for (Polygon polygon : polygons) {
@@ -187,8 +213,16 @@ public class Render extends Environment implements PolygonEnvironmentIntf{
     public Point getEnvCoordinates(Point point) {
         double h = Math.sqrt(Math.pow(reference.x - point.x, 2) + Math.pow(reference.y - point.y, 2)); // Pythagorus X^2 + Y^2 = H^2
         double phi = (point.y - reference.y) == 0 ? 0 : Math.atan(((double) point.x - reference.x) / (point.y - reference.y));
-        Point drawCoordinates = new Point(screenCenter.x + (int) (interval * h * Math.sin(phi - degreeToRadian(theta))),
-                screenCenter.y - (int) (interval * h * Math.cos(phi - degreeToRadian(theta))));
+
+        // TODO: Shape renders wrong when some points are > 0 but others < 0
+        Point drawCoordinates = new Point(0,0);
+        if((point.y + reference.y) <= 0) { // 3rd, 4th quad
+            drawCoordinates = new Point(screenCenter.x - (int) (interval * h * Math.sin(phi - degreeToRadian(theta))),
+                    screenCenter.y + (int) (interval * h * Math.cos(phi - degreeToRadian(theta))));
+        } else if ((point.y + reference.y) > 0) { // 1st, 2nd quad
+            drawCoordinates = new Point(screenCenter.x + (int) (interval * h * Math.sin(phi- degreeToRadian(theta))),
+                    screenCenter.y - (int) (interval * h * Math.cos(phi - degreeToRadian(theta))));
+        }
         return drawCoordinates;
     }
     //</editor-fold>
