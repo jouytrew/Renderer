@@ -40,23 +40,23 @@ public class Render extends Environment implements PolygonEnvironmentIntf{
         Q1.add(new Point(1,2));
         polygons.add(new Polygon(Q1, this));
 
-        List<Point> Q2 = new ArrayList<>();
-        Q2.add(new Point(-1,1));
-        Q2.add(new Point(-2,1));
-        Q2.add(new Point(-1,2));
-        polygons.add(new Polygon(Q2, this));
-
-        List<Point> Q4 = new ArrayList<>();
-        Q4.add(new Point(1,-1));
-        Q4.add(new Point(2,-1));
-        Q4.add(new Point(1,-2));
-        polygons.add(new Polygon(Q4, this));
-
-        List<Point> Q3 = new ArrayList<>();
-        Q3.add(new Point(-1,-1));
-        Q3.add(new Point(-2,-1));
-        Q3.add(new Point(-1,-2));
-        polygons.add(new Polygon(Q3, this));
+//        List<Point> Q2 = new ArrayList<>();
+//        Q2.add(new Point(-1,1));
+//        Q2.add(new Point(-2,1));
+//        Q2.add(new Point(-1,2));
+//        polygons.add(new Polygon(Q2, this));
+//
+//        List<Point> Q4 = new ArrayList<>();
+//        Q4.add(new Point(1,-1));
+//        Q4.add(new Point(2,-1));
+//        Q4.add(new Point(1,-2));
+//        polygons.add(new Polygon(Q4, this));
+//
+//        List<Point> Q3 = new ArrayList<>();
+//        Q3.add(new Point(-1,-1));
+//        Q3.add(new Point(-2,-1));
+//        Q3.add(new Point(-1,-2));
+//        polygons.add(new Polygon(Q3, this));
     }
     //</editor-fold>
 
@@ -211,16 +211,18 @@ public class Render extends Environment implements PolygonEnvironmentIntf{
     //<editor-fold desc="Polygon Environment Interface">
     @Override
     public Point getEnvCoordinates(Point point) {
-        double h = Math.sqrt(Math.pow(reference.x - point.x, 2) + Math.pow(reference.y - point.y, 2)); // Pythagorus X^2 + Y^2 = H^2
-        double phi = (point.y - reference.y) == 0 ? 0 : Math.atan(((double) point.x - reference.x) / (point.y - reference.y));
-
+        double h = Math.sqrt(Math.pow(reference.x - point.x, 2) + Math.pow(reference.y - point.y, 2)); // Pythagoras X^2 + Y^2 = H^2
+        double phi = 0;
+        if ((point.y - reference.y) != 0) {
+            phi = Math.atan(((double) point.x - reference.x) / (point.y - reference.y));
+        }
         // TODO: Shape renders wrong when some points are > 0 but others < 0
         Point drawCoordinates = new Point(0,0);
         if((point.y + reference.y) <= 0) { // 3rd, 4th quad
             drawCoordinates = new Point(screenCenter.x - (int) (interval * h * Math.sin(phi - degreeToRadian(theta))),
                     screenCenter.y + (int) (interval * h * Math.cos(phi - degreeToRadian(theta))));
         } else if ((point.y + reference.y) > 0) { // 1st, 2nd quad
-            drawCoordinates = new Point(screenCenter.x + (int) (interval * h * Math.sin(phi- degreeToRadian(theta))),
+            drawCoordinates = new Point(screenCenter.x + (int) (interval * h * Math.sin(phi - degreeToRadian(theta))),
                     screenCenter.y - (int) (interval * h * Math.cos(phi - degreeToRadian(theta))));
         }
         return drawCoordinates;
