@@ -6,7 +6,6 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 
-import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,9 +14,9 @@ public class Render extends Environment implements PolygonEnvironmentIntf{
     //<editor-fold desc="Fields">
     Coordinate reference = new Coordinate(0.0, 0.0);
     double theta = 0;
-    final double DELTA_CONSTANT = 0.05;
 
-    final int interval = 50; // TODO: add zoom later
+    double zoom = 1;
+    double panDelta = 5;
     final int DEGREES_IN_CIRCLE = 360;
 
     Dimension screenSize;
@@ -35,9 +34,9 @@ public class Render extends Environment implements PolygonEnvironmentIntf{
         polygons = new ArrayList<>();
 
         List<Coordinate> Q1 = new ArrayList<>();
-        Q1.add(new Coordinate(1,1));
-        Q1.add(new Coordinate(2,1));
-        Q1.add(new Coordinate(1,2));
+        Q1.add(new Coordinate(100,100));
+        Q1.add(new Coordinate(200,100));
+        Q1.add(new Coordinate(100,200));
         polygons.add(new Polygon(Q1, this));
 
 //        List<Point> Q2 = new ArrayList<>();
@@ -72,23 +71,23 @@ public class Render extends Environment implements PolygonEnvironmentIntf{
             switch(e.getKeyCode()) {
                 case KeyEvent.VK_UP:
                 case KeyEvent.VK_W:
-                    reference.y += (DELTA_CONSTANT * Math.cos(degreeToRadian(theta)));
-                    reference.x += (DELTA_CONSTANT * Math.sin(degreeToRadian(theta)));
+                    reference.y += (panDelta / zoom * Math.cos(degreeToRadian(theta)));
+                    reference.x += (panDelta / zoom * Math.sin(degreeToRadian(theta)));
                     break;
                 case KeyEvent.VK_DOWN:
                 case KeyEvent.VK_S:
-                    reference.y -= DELTA_CONSTANT * Math.cos(degreeToRadian(theta));
-                    reference.x -= DELTA_CONSTANT * Math.sin(degreeToRadian(theta));
+                    reference.y -= panDelta / zoom * Math.cos(degreeToRadian(theta));
+                    reference.x -= panDelta / zoom * Math.sin(degreeToRadian(theta));
                     break;
                 case KeyEvent.VK_LEFT:
                 case KeyEvent.VK_A:
-                    reference.x -= DELTA_CONSTANT * Math.cos(degreeToRadian(theta)) ;
-                    reference.y += DELTA_CONSTANT * Math.sin(degreeToRadian(theta));
+                    reference.x -= panDelta / zoom * Math.cos(degreeToRadian(theta)) ;
+                    reference.y += panDelta / zoom * Math.sin(degreeToRadian(theta));
                     break;
                 case KeyEvent.VK_RIGHT:
                 case KeyEvent.VK_D:
-                    reference.x += DELTA_CONSTANT * Math.cos(degreeToRadian(theta));
-                    reference.y -= DELTA_CONSTANT * Math.sin(degreeToRadian(theta));
+                    reference.x += panDelta / zoom * Math.cos(degreeToRadian(theta));
+                    reference.y -= panDelta / zoom * Math.sin(degreeToRadian(theta));
                     break;
 
                 case KeyEvent.VK_Q:
@@ -108,6 +107,13 @@ public class Render extends Environment implements PolygonEnvironmentIntf{
                     reference.x = 0;
                     reference.y = 0;
                     theta = 0;
+                    break;
+
+                case KeyEvent.VK_Z:
+                    zoom *= 2.0;
+                    break;
+                case KeyEvent.VK_X:
+                    zoom /= 2.0;
                     break;
             }
         }
@@ -160,7 +166,6 @@ public class Render extends Environment implements PolygonEnvironmentIntf{
     @Override
     public void paintEnvironment(Graphics g) {
         Graphics2D g2 = (Graphics2D) g;
-
         //<editor-fold defaultstate="collapsed" desc="Antialias">
         g2.setRenderingHint(
                 RenderingHints.KEY_ANTIALIASING,
@@ -176,25 +181,24 @@ public class Render extends Environment implements PolygonEnvironmentIntf{
         g.drawString("Theta: " + theta + " / " + degreeToRadian(theta) + " radians", 5, 12);
         g.drawString("Reference: (" + reference.x + ", " + reference.y + ")", 5, 24);
 
-
         double slope = Math.tan(degreeToRadian(theta));
 
         // draw the origin
         int circleRadius = 5; // temp value
         g.drawOval(origin.x - circleRadius, origin.y - circleRadius, 2 * circleRadius, 2 * circleRadius);
+
+        // TODO: Build functions to draw lines and vertical lines
         // draw the x axis
         int a = origin.y + (int) (slope * origin.x);
         int b = origin.y + (int) (slope * (origin.x - screenSize.width));
 
-        // TODO: THIS LINE IS WRONG
         if (theta == 90 || theta == 270) g.drawLine((int)(origin.x - reference.x) , 0,  (int)(origin.x - reference.x), screenSize.height);
         else g.drawLine(0, a, screenSize.width, b);
-
 
         // draw the y axis
         a = origin.x - (int) (slope * origin.y);
         b = origin.x - (int) (slope * (origin.y - screenSize.height));
-        // TODO: THIS LINE IS WRONG
+
         if(theta == 90 || theta == 270) g.drawLine(0, (int)(origin.y - reference.y), screenSize.width, (int)(origin.y - reference.y));
         else g.drawLine(a, 0, b, screenSize.height);
 
@@ -206,11 +210,21 @@ public class Render extends Environment implements PolygonEnvironmentIntf{
     }
     //</editor-fold>
 
+    /**
+     * converts degrees to radians
+     * @param n a value in degrees
+     * @return the converted value in radians
+     */
     private double degreeToRadian(double n) {
         return n * Math.PI / 180;
     }
 
     //<editor-fold desc="Polygon Environment Interface">
+    /**
+     * Returns the screen draw coordinates for a given point within the cartesian coordinate system
+     * @param coordinate cartesian coordinates which need to be translated
+     * @return the screen coordinates of the input
+     */
     @Override
     public Point getEnvCoordinates(Coordinate coordinate) {
         Coordinate relativeCoordinates = new Coordinate(coordinate.x - reference.x, coordinate.y - reference.y);
@@ -218,11 +232,10 @@ public class Render extends Environment implements PolygonEnvironmentIntf{
             return screenCenter;
         } else {
             double h = Math.sqrt(Math.pow(relativeCoordinates.x, 2) + Math.pow(relativeCoordinates.y, 2)); // Pythagoras X^2 + Y^2 = H^2
-            // TODO: This code is wrong, gotta figure out how
-            double phi = Math.atan(relativeCoordinates.y / relativeCoordinates.x) + degreeToRadian(relativeCoordinates.x > 0 ? 0 : 180);
+            double phi = Math.atan(relativeCoordinates.y / relativeCoordinates.x) + degreeToRadian(relativeCoordinates.x >= 0 ? 0 : 180);
             double combinedAngle = phi + degreeToRadian(theta);
-            Point drawCoordinates = new Point(screenCenter.x + (int) (interval * h * Math.cos(combinedAngle)),
-                    screenCenter.y - (int) (interval * h * Math.sin(combinedAngle)));
+            Point drawCoordinates = new Point(screenCenter.x + (int) (zoom * h * Math.cos(combinedAngle)),
+                    screenCenter.y - (int) (zoom * h * Math.sin(combinedAngle)));
             return drawCoordinates;
         }
     }
